@@ -122,14 +122,18 @@ tasks:
 
   release:
     desc: Create a full release (requires GITHUB_TOKEN and git tag)
+    env:
+      GITHUB_TOKEN: '{{env "GITHUB_TOKEN"}}'
     cmds:
       - |
         if [ -z "${GITHUB_TOKEN}" ]; then
           echo "Error: GITHUB_TOKEN environment variable is required"
-          echo "Usage: GITHUB_TOKEN=your_token task release"
+          echo "Please run: export GITHUB_TOKEN=your_token"
+          echo "Then run: task release"
           exit 1
         fi
-      - goreleaser release --clean
+        echo "✓ Found GITHUB_TOKEN"
+        goreleaser release --clean
 
   version:
     desc: Show Go version and module info

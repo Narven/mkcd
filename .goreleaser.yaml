@@ -55,7 +55,39 @@ changelog:
       - "^docs:"
       - "^test:"
 
+# Code signing for macOS
+# Set APPLE_CERTIFICATE environment variable with your certificate name
+# Example: export APPLE_CERTIFICATE="Developer ID Application: Your Name (TEAM_ID)"
+signs:
+  - artifacts: binary
+    ids:
+      - mkcd
+    cmd: codesign
+    args:
+      - "--force"
+      - "--deep"
+      - "--sign"
+      - "${APPLE_CERTIFICATE}"
+      - "${artifact}"
+    env:
+      - APPLE_CERTIFICATE
+
+# Alternative: Basic notarization setup (optional - requires Apple Developer account)
+# Uncomment and configure if you have notarization credentials
+# notarizations:
+#   - artifacts: archive
+#     id: default
+#     provider: apple
+#     certificate: "${APPLE_CERTIFICATE}"
+#     username: "${APPLE_USERNAME}"
+#     password: "${APPLE_PASSWORD}"
+#     team_id: "${APPLE_TEAM_ID}"
+
 release:
+  github:
+    owner: Narven
+    name: mkcd
+  mode: replace
   footer: >-
 
     ---
