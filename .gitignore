@@ -1,0 +1,6 @@
+# Added by goreleaser init:
+dist/
+
+# Binary
+mkcd
+mkcd.exe
