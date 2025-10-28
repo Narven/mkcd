@@ -1,0 +1,139 @@
+version: "3"
+
+vars:
+  BINARY_NAME: mkcd
+  MAIN_FILE: main.go
+  BUILD_DIR: dist
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  build:
+    desc: Build the binary using goreleaser (snapshot)
+    cmds:
+      - goreleaser build --snapshot --single-target
+      - |
+        # Copy the binary to root for the current platform
+        if [ "$(go env GOOS)" = "windows" ]; then
+          BINARY_PATH="$(find dist -name '{{.BINARY_NAME}}.exe' -type f | head -1)"
+          if [ -n "$BINARY_PATH" ]; then
+            cp "$BINARY_PATH" ./{{.BINARY_NAME}}.exe
+          fi
+        else
+          BINARY_PATH="$(find dist -name '{{.BINARY_NAME}}' -type f | head -1)"
+          if [ -n "$BINARY_PATH" ]; then
+            cp "$BINARY_PATH" ./{{.BINARY_NAME}}
+            chmod +x ./{{.BINARY_NAME}}
+          fi
+        fi
+
+  build-release:
+    desc: Build optimized binary for release using goreleaser
+    cmds:
+      - task: build
+
+  run:
+    desc: Build and run the tool
+    deps: [build]
+    cmds:
+      - ./{{.BINARY_NAME}}
+
+  install:
+    desc: Install the binary to $GOPATH/bin or $GOBIN
+    cmds:
+      - go install -ldflags="-s -w" -trimpath
+
+  install:system:
+    desc: Build for macOS using goreleaser and install to /usr/local/bin
+    cmds:
+      - goreleaser build --clean --snapshot --single-target --skip validate
+      - |
+        # Find the macOS binary and install it
+        BINARY_PATH="$(find dist -name '{{.BINARY_NAME}}' -type f | head -1)"
+        if [ -z "$BINARY_PATH" ]; then
+          echo "Error: Binary not found in dist directory"
+          exit 1
+        fi
+        echo "Installing {{.BINARY_NAME}} to /usr/local/bin..."
+        sudo cp "$BINARY_PATH" /usr/local/bin/{{.BINARY_NAME}}
+        sudo chmod +x /usr/local/bin/{{.BINARY_NAME}}
+        echo "{{.BINARY_NAME}} installed successfully!"
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test -v ./...
+
+  test-coverage:
+    desc: Run tests with coverage
+    cmds:
+      - go test -v -coverprofile=coverage.out ./...
+      - go tool cover -html=coverage.out -o coverage.html
+
+  fmt:
+    desc: Format Go code
+    cmds:
+      - go fmt ./...
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  lint:
+    desc: Run linters (fmt, vet)
+    cmds:
+      - task: fmt
+      - task: vet
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -f {{.BINARY_NAME}} {{.BINARY_NAME}}.exe
+      - rm -rf {{.BUILD_DIR}}
+      - rm -f coverage.out coverage.html
+
+  check:
+    desc: Run all checks (fmt, vet, test)
+    cmds:
+      - task: fmt
+      - task: vet
+      - task: test
+
+  cross-build:
+    desc: Cross-compile for multiple platforms using goreleaser
+    cmds:
+      - goreleaser build --snapshot
+
+  release:build:
+    desc: Build release binaries locally using goreleaser (snapshot)
+    cmds:
+      - rm -rf {{.BUILD_DIR}}
+      - goreleaser build --snapshot
+
+  release:snapshot:
+    desc: Create a snapshot release locally (no git push)
+    cmds:
+      - rm -rf {{.BUILD_DIR}}
+      - goreleaser release --snapshot --clean
+
+  release:
+    desc: Create a full release (requires GITHUB_TOKEN and git tag)
+    cmds:
+      - |
+        if [ -z "${GITHUB_TOKEN}" ]; then
+          echo "Error: GITHUB_TOKEN environment variable is required"
+          echo "Usage: GITHUB_TOKEN=your_token task release"
+          exit 1
+        fi
+      - goreleaser release --clean
+
+  version:
+    desc: Show Go version and module info
+    cmds:
+      - go version
+      - go env GOMOD
+      - go list -m
