@@ -1,4 +1,4 @@
-module github.com/Naven/mkcd
+module github.com/Narven/mkcd
 
 go 1.25.1
 

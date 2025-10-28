@@ -3,3 +3,6 @@ dist/
 
 # Binary
 .DS_Store
+
+# Test coverage
+coverage.*
