@@ -1,6 +1,6 @@
 # mkcd
 
-A cross-platform CLI tool that combines `mkdir` and `cd` functionality, allowing you to create a directory and change into it in a single command.
+mkdir + cd = mkcd. Create directories and step into them effortlessly in a single command. 🎯
 
 ## Features
 
